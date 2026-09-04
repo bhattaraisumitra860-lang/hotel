@@ -31,6 +31,14 @@ body { overflow-x: hidden; }
 .home-gallery-masonry-item:nth-child(4) { grid-area: four; }
 .home-gallery-masonry-item:nth-child(5) { grid-area: five; }
 .home-gallery-masonry-item img { display: block; }
+.home-gallery-balanced {
+  grid-template-areas: none;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.home-gallery-balanced .home-gallery-masonry-item {
+  grid-area: auto !important;
+  aspect-ratio: 1 / .78;
+}
 @media (min-width: 768px) {
   .home-gallery-masonry {
     grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -40,6 +48,11 @@ body { overflow-x: hidden; }
       "one one two two three three"
       "one one two two three three"
       "four four four five five five";
+  }
+  .home-gallery-balanced {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-areas: none;
+    grid-auto-rows: auto;
   }
 }
 @media (max-width: 640px) {

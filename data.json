@@ -36,7 +36,10 @@
         "title": "Good Food",
         "desc": "Quality meals and dining options available."
       }
-    ]
+    ],
+    "homepage_gallery_ids": null,
+    "homepage_room_ids": null,
+    "homepage_gallery_layout": "masonry"
   },
   "rooms": [
     {
@@ -191,79 +194,115 @@
       "id": "g-ext-1",
       "url": "/static/uploads/exterior-1.png",
       "category": "Exterior",
-      "caption": "Hotel 77 Front View"
+      "caption": "Hotel 77 Front View",
+      "visible": true,
+      "featured": false
     },
     {
       "id": "g-ext-2",
       "url": "/static/uploads/exterior-2.png",
       "category": "Exterior",
-      "caption": "Hotel 77 Entrance & Surroundings"
+      "caption": "Hotel 77 Entrance & Surroundings",
+      "visible": true,
+      "featured": true,
+      "title": "Hotel 77 Entrance & Surroundings",
+      "alt_text": "Hotel 77 Entrance & Surroundings"
     },
     {
       "id": "g-int-1",
       "url": "/static/uploads/interior-1.png",
       "category": "Interior",
-      "caption": "Reception & Lounge Area"
+      "caption": "Reception & Lounge Area",
+      "visible": true,
+      "featured": false
     },
     {
       "id": "g-int-2",
       "url": "/static/uploads/interior-2.png",
       "category": "Interior",
-      "caption": "Interior Hallway"
+      "caption": "Interior Hallway",
+      "visible": true,
+      "featured": true,
+      "title": "Interior Hallway",
+      "alt_text": "Interior Hallway"
     },
     {
       "id": "g-int-3",
       "url": "/static/uploads/interior-3.png",
       "category": "Interior",
-      "caption": "Common Area"
+      "caption": "Common Area",
+      "visible": true,
+      "featured": false
     },
     {
       "id": "g-int-4",
       "url": "/static/uploads/interior-4.png",
       "category": "Interior",
-      "caption": "Hotel Interior Design"
+      "caption": "Hotel Interior Design",
+      "visible": true,
+      "featured": true,
+      "title": "Hotel Interior Design",
+      "alt_text": "Hotel Interior Design"
     },
     {
       "id": "g-room-110",
       "url": "/static/uploads/110.png",
       "category": "Rooms",
-      "caption": "Suite 110 - Family Suite"
+      "caption": "Suite 110 - Family Suite",
+      "title": "Suite 110 - Family Suite",
+      "alt_text": "Suite 110 - Family Suite",
+      "featured": false,
+      "visible": true
     },
     {
       "id": "g-room-107",
       "url": "/static/uploads/107.png",
       "category": "Rooms",
-      "caption": "Suite 107"
+      "caption": "Suite 107",
+      "visible": true,
+      "featured": true,
+      "title": "Suite 107",
+      "alt_text": "Suite 107"
     },
     {
       "id": "g-room-105",
       "url": "/static/uploads/105.png",
       "category": "Rooms",
-      "caption": "Deluxe Room 105"
+      "caption": "Deluxe Room 105",
+      "visible": true,
+      "featured": false
     },
     {
       "id": "g-room-101",
       "url": "/static/uploads/101.png",
       "category": "Rooms",
-      "caption": "Deluxe Room 101"
+      "caption": "Deluxe Room 101",
+      "visible": true,
+      "featured": false
     },
     {
       "id": "g-room-102",
       "url": "/static/uploads/102.png",
       "category": "Rooms",
-      "caption": "Standard Room 102"
+      "caption": "Standard Room 102",
+      "visible": true,
+      "featured": false
     },
     {
       "id": "g-room-103",
       "url": "/static/uploads/103.png",
       "category": "Rooms",
-      "caption": "Standard Room 103"
+      "caption": "Standard Room 103",
+      "visible": true,
+      "featured": false
     },
     {
       "id": "g-room-104",
       "url": "/static/uploads/104.png",
       "category": "Rooms",
-      "caption": "Standard Room 104"
+      "caption": "Standard Room 104",
+      "visible": true,
+      "featured": false
     }
   ],
   "testimonials": [

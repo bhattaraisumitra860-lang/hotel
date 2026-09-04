@@ -29,6 +29,9 @@ def get_data():
         data.setdefault('settings', {}).setdefault(key, value)
     for key in ('gallery', 'testimonials', 'pages', 'rooms', 'messages', 'menu'):
         data.setdefault(key, defaults.get(key, []))
+    for image in data['gallery']:
+        image.setdefault('visible', True)
+        image.setdefault('featured', False)
     return data
 
 def save_data(data):
@@ -51,8 +54,8 @@ def get_default_data():
             "email_address": "hotel77@gmail.com",
             "address": "Shreegaun, Jakhera, Lamahi, Dang, Nepal",
             "google_maps_embed_url": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3527.2722631552697!2d82.5657133753295!3d27.862905676093725!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3997a36fb3930c71%3A0x49ac19d8da197d81!2sHotel%2077!5e0!3m2!1sen!2snp!4v1781294849874!5m2!1sen!2snp",
-            "seo_title": "Hotel 77 | Lamahi Premier Hotel",
-            "seo_description": "Enjoy comfortable stays at Hotel 77 in Lamahi, Dang, Nepal.",
+            "seo_title": "Hotel 77 | Hotel in Lamahi, Dang, Nepal",
+            "seo_description": "Hotel 77 is a comfortable hotel in Lamahi, Dang, Nepal, offering clean rooms, suites, Wi-Fi, room service, and friendly hospitality.",
             "footer_content": "© 2026 Hotel 77. Shreegaun, Jakhera, Lamahi, Dang, Nepal.",
             "amenities": [
                 {"icon": "clock", "title": "24/7 Room Service", "desc": "Round-the-clock room service for your comfort."},
@@ -60,6 +63,9 @@ def get_default_data():
                 {"icon": "home", "title": "Peaceful Environment", "desc": "Tranquil atmosphere for a relaxing stay."},
                 {"icon": "utensils", "title": "Good Food", "desc": "Quality meals and dining options available."}
             ],
+            "homepage_gallery_ids": None,
+            "homepage_room_ids": None,
+            "homepage_gallery_layout": "masonry",
             "maintenance_mode": False
         },
         "rooms": [
@@ -121,7 +127,28 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 @app.route('/')
 def home():
     data = get_data()
-    return render_template('index.html', data=data)
+    settings = data['settings']
+    gallery = data['gallery']
+    rooms = [room for room in data['rooms'] if room.get('enabled', True)]
+    gallery_ids = settings.get('homepage_gallery_ids')
+    room_ids = settings.get('homepage_room_ids')
+    gallery = [item for item in gallery if item.get('visible', True)]
+    featured_gallery = [item for item in gallery if item.get('featured')]
+    if featured_gallery:
+        by_id = {item['id']: item for item in featured_gallery}
+        gallery = ([by_id[item_id] for item_id in gallery_ids if item_id in by_id]
+                   if gallery_ids else featured_gallery)
+    elif gallery_ids is not None:
+        by_id = {item['id']: item for item in gallery}
+        gallery = [by_id[item_id] for item_id in gallery_ids if item_id in by_id]
+    else:
+        gallery = gallery
+    if room_ids is not None:
+        by_id = {room['id']: room for room in rooms}
+        rooms = [by_id[item_id] for item_id in room_ids if item_id in by_id]
+    else:
+        rooms = [room for room in rooms if room.get('featured')]
+    return render_template('index.html', data=data, homepage_gallery=gallery, homepage_rooms=rooms)
 
 @app.route('/rooms')
 def rooms_page():
@@ -131,12 +158,29 @@ def rooms_page():
 @app.route('/gallery')
 def gallery_page():
     data = get_data()
+    data['gallery'] = [item for item in data['gallery'] if item.get('visible', True)]
     return render_template('gallery.html', data=data)
 
 @app.route('/contact')
 def contact_page():
     data = get_data()
     return render_template('contact.html', data=data)
+
+@app.route('/robots.txt')
+def robots_txt():
+    return ("User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /api/\n\n"
+            "Sitemap: https://www.hotel77.com.np/sitemap.xml\n", 200,
+            {'Content-Type': 'text/plain; charset=utf-8'})
+
+@app.route('/sitemap.xml')
+def sitemap_xml():
+    data = get_data()
+    urls = ['/', '/rooms', '/gallery', '/contact']
+    urls.extend('/page/' + page['slug'] for page in data['pages'])
+    body = '\n'.join(f'  <url><loc>https://www.hotel77.com.np{url}</loc></url>' for url in urls)
+    return (f'<?xml version="1.0" encoding="UTF-8"?>\n'
+            f'<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n{body}\n</urlset>',
+            200, {'Content-Type': 'application/xml; charset=utf-8'})
 
 @app.route('/page/<slug>')
 def page_view(slug):
@@ -153,7 +197,7 @@ def api_public_data():
     return jsonify({
         'settings': data['settings'],
         'rooms': [r for r in data['rooms'] if r['enabled']],
-        'gallery': data['gallery'],
+        'gallery': [item for item in data['gallery'] if item.get('visible', True)],
         'testimonials': data['testimonials'],
         'pages': data['pages'],
         'menu': sorted(data['menu'], key=lambda x: x['order'])
@@ -229,6 +273,30 @@ def admin_dashboard():
 def admin_settings():
     return render_template('admin_settings.html', data=get_data())
 
+@app.route('/admin/homepage')
+@login_required
+def admin_homepage():
+    return render_template('admin_homepage.html', data=get_data())
+
+@app.route('/admin/homepage/update', methods=['POST'])
+@login_required
+def admin_update_homepage():
+    data = get_data()
+
+    def ordered_ids(items, prefix):
+        positions = []
+        for item in items:
+            value = request.form.get(f'{prefix}{item["id"]}', '').strip()
+            if value.isdigit() and int(value) > 0:
+                positions.append((int(value), item['id']))
+        return [item_id for _, item_id in sorted(positions, key=lambda pair: (pair[0], pair[1]))]
+
+    data['settings']['homepage_gallery_ids'] = ordered_ids(data['gallery'], 'gallery_position_')
+    data['settings']['homepage_room_ids'] = ordered_ids(data['rooms'], 'room_position_')
+    data['settings']['homepage_gallery_layout'] = request.form.get('gallery_layout', 'masonry')
+    save_data(data)
+    return redirect(url_for('admin_homepage'))
+
 @app.route('/admin/pages')
 @login_required
 def admin_pages():
@@ -275,6 +343,27 @@ def admin_testimonials():
 def admin_edit_testimonial(testimonial_id):
     data = get_data(); item = next((x for x in data['testimonials'] if x['id'] == testimonial_id), None)
     return render_template('admin_testimonial_edit.html', data=data, item=item) if item else redirect(url_for('admin_testimonials'))
+
+@app.route('/admin/testimonials/add', methods=['GET', 'POST'])
+@login_required
+def admin_add_testimonial():
+    if request.method == 'POST':
+        data = get_data()
+        try:
+            rating = max(1, min(5, int(request.form.get('rating', 5))))
+        except ValueError:
+            rating = 5
+        data['testimonials'].append({
+            'id': 't-' + str(uuid.uuid4())[:8],
+            'author_name': request.form.get('author_name', '').strip(),
+            'content': request.form.get('content', '').strip(),
+            'source': request.form.get('source', '').strip(),
+            'rating': rating,
+            'featured': request.form.get('featured') == 'on'
+        })
+        save_data(data)
+        return redirect(url_for('admin_testimonials'))
+    return render_template('admin_testimonial_edit.html', data=get_data(), item=None)
 
 @app.route('/admin/update-settings', methods=['POST'])
 @login_required
@@ -324,6 +413,7 @@ def admin_update_gallery(image_id):
         image['title'] = request.form.get('title', image.get('title', image.get('caption', '')))
         image['alt_text'] = request.form.get('alt_text', image.get('alt_text', image.get('caption', 'Hotel 77')))
         image['category'] = request.form.get('category', 'Other')
+        image['visible'] = request.form.get('visible') == 'on'
         image['featured'] = request.form.get('featured') == 'on'
         save_data(data)
     return redirect(url_for('admin_gallery'))
