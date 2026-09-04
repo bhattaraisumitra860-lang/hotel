@@ -49,6 +49,14 @@
                         <input type="text" name="address" value="{{ data.settings.address }}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm">
                     </div>
                     <div>
+                        <label class="block text-xs font-mono uppercase text-gray-500 tracking-wider mb-2">Second Phone</label>
+                        <input type="text" name="secondary_phone" value="{{ data.settings.secondary_phone }}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-mono uppercase text-gray-500 tracking-wider mb-2">WhatsApp Message</label>
+                        <input type="text" name="whatsapp_prefilled_text" value="{{ data.settings.whatsapp_prefilled_text }}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm">
+                    </div>
+                    <div>
                         <label class="block text-xs font-mono uppercase text-gray-500 tracking-wider mb-2">Hero Image URL</label>
                         <input type="text" name="hero_image_url" value="{{ data.settings.hero_image_url }}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm">
                     </div>
@@ -61,12 +69,33 @@
                     <label class="block text-xs font-mono uppercase text-gray-500 tracking-wider mb-2">Maps Embed URL</label>
                     <textarea name="google_maps_embed_url" rows="3" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm">{{ data.settings.google_maps_embed_url }}</textarea>
                 </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div><label class="block text-xs font-mono uppercase text-gray-500 tracking-wider mb-2">SEO Title</label><input name="seo_title" value="{{ data.settings.seo_title }}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm"></div>
+                    <div><label class="block text-xs font-mono uppercase text-gray-500 tracking-wider mb-2">SEO Description</label><input name="seo_description" value="{{ data.settings.seo_description }}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm"></div>
+                </div>
+                <div><label class="block text-xs font-mono uppercase text-gray-500 tracking-wider mb-2">Footer Text</label><input name="footer_content" value="{{ data.settings.footer_content }}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm"></div>
+                <div><label class="block text-xs font-mono uppercase text-gray-500 tracking-wider mb-2">Homepage Amenities (JSON)</label><textarea name="amenities" rows="6" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-xs font-mono">{{ data.settings.amenities|tojson(indent=2) }}</textarea><p class="text-xs text-gray-400 mt-2">Edit titles and descriptions while preserving valid JSON.</p></div>
                 <div class="flex items-center gap-3">
                     <input type="checkbox" name="maintenance_mode" id="mm" {% if data.settings.maintenance_mode %}checked{% endif %} class="rounded">
                     <label for="mm" class="text-sm text-gray-700">Maintenance Mode</label>
                 </div>
                 <button type="submit" class="px-6 py-3 bg-gray-950 text-white rounded-xl text-xs font-mono uppercase tracking-wider hover:bg-gray-900 cursor-pointer">Save Settings</button>
             </form>
+        </div>
+
+        <!-- Editable pages -->
+        <div class="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm mb-8">
+            <h2 class="font-serif text-2xl font-bold text-gray-900 mb-2">Pages & About Content</h2>
+            <p class="text-sm text-gray-500 mb-6">Edit the complete text shown on your custom pages.</p>
+            <div class="space-y-6">
+            {% for page in data.pages %}
+            <form method="POST" action="/admin/pages/update/{{ page.id }}" class="border border-gray-100 rounded-2xl p-5 space-y-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4"><input name="title" value="{{ page.title }}" placeholder="Page title" class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm"><input name="slug" value="{{ page.slug }}" placeholder="URL slug" class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm"></div>
+                <textarea name="content" rows="8" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm">{{ page.content }}</textarea>
+                <button class="px-5 py-2.5 bg-gray-950 text-white rounded-xl text-xs font-mono uppercase tracking-wider">Save {{ page.title }}</button>
+            </form>
+            {% endfor %}
+            </div>
         </div>
 
         <!-- Upload Images -->
@@ -77,6 +106,7 @@
                 <button type="submit" class="px-6 py-3 bg-blue-600 text-white rounded-xl text-xs font-mono uppercase tracking-wider hover:bg-blue-700 cursor-pointer">Upload</button>
             </form>
             <div id="upload-result" class="mt-4 text-sm text-gray-600"></div>
+            <p class="mt-2 text-xs text-gray-400">Uploads are returned with a suggested room/category for review. Save the final association in your persistent gallery storage.</p>
         </div>
 
         <!-- Rooms -->
@@ -112,6 +142,23 @@
                 </table>
             </div>
 
+            <h3 class="font-serif text-xl font-bold text-gray-900 mb-4">Edit Existing Rooms</h3>
+            <div class="space-y-5 mb-8">
+            {% for room in data.rooms %}
+            <form method="POST" action="/admin/rooms/update/{{ room.id }}" class="border border-gray-100 rounded-2xl p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input name="name" value="{{ room.name }}" class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm">
+                <input name="category" value="{{ room.category }}" class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm">
+                <input name="capacity_guests" type="number" value="{{ room.capacity_guests }}" class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm">
+                <input name="capacity_beds" type="number" value="{{ room.capacity_beds }}" class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm">
+                <input name="short_description" value="{{ room.short_description }}" class="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm">
+                <textarea name="full_description" rows="2" class="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm">{{ room.full_description }}</textarea>
+                <input name="amenities" value="{{ room.amenities|join(', ') }}" class="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm">
+                <label class="text-sm"><input type="checkbox" name="featured" {% if room.featured %}checked{% endif %}> Featured</label><label class="text-sm"><input type="checkbox" name="enabled" {% if room.enabled %}checked{% endif %}> Visible</label>
+                <button class="md:col-span-2 px-5 py-2.5 bg-gray-950 text-white rounded-xl text-xs font-mono uppercase tracking-wider">Save {{ room.name }}</button>
+            </form>
+            {% endfor %}
+            </div>
+
             <h3 class="font-serif text-xl font-bold text-gray-900 mb-4">Add Room</h3>
             <form method="POST" action="/admin/rooms/add" class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <input type="text" name="name" placeholder="Room Name" required class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm">
@@ -130,6 +177,33 @@
                 </div>
                 <button type="submit" class="px-6 py-3 bg-green-600 text-white rounded-xl text-xs font-mono uppercase tracking-wider hover:bg-green-700 cursor-pointer md:col-span-3">Add Room</button>
             </form>
+        </div>
+
+        <!-- Editable gallery metadata -->
+        <div class="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm mb-8">
+            <h2 class="font-serif text-2xl font-bold text-gray-900 mb-2">Gallery & Images</h2>
+            <p class="text-sm text-gray-500 mb-6">Update captions, alt text, categories, and visibility for every seeded photograph.</p>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+            {% for item in data.gallery %}
+            <form method="POST" action="/admin/gallery/update/{{ item.id }}" class="border border-gray-100 rounded-2xl p-4 space-y-3">
+                <img src="{{ item.url }}" alt="{{ item.caption }}" class="w-full h-36 object-cover rounded-xl">
+                <input name="title" value="{{ item.title or item.caption }}" placeholder="Title" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm">
+                <input name="caption" value="{{ item.caption }}" placeholder="Caption" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm">
+                <input name="alt_text" value="{{ item.alt_text or item.caption }}" placeholder="Alt text" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm">
+                <div class="flex gap-2"><select name="category" class="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-sm">{% for cat in ['Exterior','Interior','Rooms','Other'] %}<option {% if item.category == cat %}selected{% endif %}>{{ cat }}</option>{% endfor %}</select><label class="text-xs flex items-center gap-1"><input type="checkbox" name="featured" {% if item.featured %}checked{% endif %}> Featured</label></div>
+                <button class="px-4 py-2 bg-gray-950 text-white rounded-xl text-xs font-mono uppercase">Save Image</button>
+            </form>
+            {% endfor %}
+            </div>
+        </div>
+
+        <!-- Editable testimonials -->
+        <div class="bg-white rounded-3xl border border-gray-100 p-8 shadow-sm mb-8">
+            <h2 class="font-serif text-2xl font-bold text-gray-900 mb-6">Testimonials</h2>
+            <div class="space-y-5">{% for testimonial in data.testimonials %}
+            <form method="POST" action="/admin/testimonials/update/{{ testimonial.id }}" class="border border-gray-100 rounded-2xl p-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input name="author_name" value="{{ testimonial.author_name }}" class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm"><input name="source" value="{{ testimonial.source }}" class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm"><textarea name="content" rows="3" class="md:col-span-2 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm">{{ testimonial.content }}</textarea><input name="rating" type="number" min="1" max="5" value="{{ testimonial.rating }}" class="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm"><label class="text-sm flex items-center gap-2"><input type="checkbox" name="featured" {% if testimonial.featured %}checked{% endif %}> Visible on website</label><button class="md:col-span-2 px-5 py-2.5 bg-gray-950 text-white rounded-xl text-xs font-mono uppercase tracking-wider">Save Testimonial</button>
+            </form>{% endfor %}</div>
         </div>
 
         <!-- Messages -->
@@ -161,11 +235,8 @@
             {% endif %}
         </div>
 
-        <!-- Reset -->
-        <div class="mt-8 text-center">
-            <form method="POST" action="/admin/reset" onsubmit="return confirm('Reset all data to defaults? This cannot be undone.')">
-                <button type="submit" class="px-6 py-3 bg-red-600 text-white rounded-xl text-xs font-mono uppercase tracking-wider hover:bg-red-700 cursor-pointer">Reset to Defaults</button>
-            </form>
+        <div class="mt-8 text-center text-xs text-gray-400 font-mono">
+            Seed data is applied only when the database is empty. Administrator edits are preserved across deployments.
         </div>
     </div>
 
@@ -177,7 +248,8 @@
         const res = await fetch('/admin/upload', { method: 'POST', body: data });
         const result = await res.json();
         if (result.success) {
-            document.getElementById('upload-result').innerHTML = 'Uploaded! URL: <code class="bg-gray-100 px-2 py-1 rounded text-blue-600">' + result.url + '</code>';
+            const room = result.suggested_room ? 'Room ' + result.suggested_room : 'No room detected';
+            document.getElementById('upload-result').innerHTML = '<strong>Review required:</strong> ' + room + ' · ' + result.suggested_category + '<br>URL: <code class="bg-gray-100 px-2 py-1 rounded text-blue-600">' + result.url + '</code>';
         } else {
             document.getElementById('upload-result').innerHTML = '<span class="text-red-600">Error: ' + (result.error || 'Unknown') + '</span>';
         }

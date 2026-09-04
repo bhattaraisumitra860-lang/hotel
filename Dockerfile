@@ -1,49 +1,14 @@
-# syntax = docker/dockerfile:1
+FROM python:3.12-slim
 
-# Adjust NODE_VERSION as desired
-ARG NODE_VERSION=22.21.1
-FROM node:${NODE_VERSION}-slim AS base
-
-LABEL fly_launch_runtime="Node.js"
-
-# Node.js app lives here
 WORKDIR /app
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    FLASK_ENV=production
 
-# Set production environment
-ENV NODE_ENV="production"
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Throw-away build stage to reduce size of final image
-FROM base AS build
-
-# Install packages needed to build node modules
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential node-gyp pkg-config python-is-python3
-
-# Install node modules
-COPY package-lock.json package.json ./
-RUN npm ci --include=dev
-
-# Copy application code
 COPY . .
 
-# Build application (Vite frontend + esbuild backend bundle)
-RUN npm run build
-
-# Remove development dependencies
-RUN npm prune --omit=dev
-
-# Final stage for app image
-FROM base
-
-# Copy built application
-COPY --from=build /app /app
-
-# Create necessary directories for runtime data
-RUN mkdir -p data public/uploads
-
-# Fly.io expects port 8080 (configured in fly.toml)
 EXPOSE 8080
-
-ENV PORT=8080
-
-CMD ["node", "dist/server.cjs"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "--workers", "2", "wsgi:application"]

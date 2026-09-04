@@ -6,27 +6,34 @@ import json
 import os
 import uuid
 from datetime import datetime
+from database import load_state, save_state
 
 app = Flask(__name__)
-app.secret_key = 'hotel77-secret-key-2026'
-app.config['UPLOAD_FOLDER'] = 'static/uploads'
+app.secret_key = os.environ.get('SECRET_KEY') or ('local-hotel77-secret' if os.environ.get('FLASK_ENV') != 'production' else None)
+if not app.secret_key:
+    raise RuntimeError('SECRET_KEY must be set in production')
+app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static/uploads')
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 # ==================== DATA LAYER ====================
-DATA_FILE = 'data.json'
-
 def get_data():
-    if os.path.exists(DATA_FILE):
-        with open(DATA_FILE, 'r') as f:
-            return json.load(f)
-    return get_default_data()
+    data = load_state(get_default_data)
+    # Add fields introduced by later versions without replacing administrator edits.
+    defaults = get_default_data()
+    for key, value in defaults.get('settings', {}).items():
+        data.setdefault('settings', {}).setdefault(key, value)
+    for key in ('gallery', 'testimonials', 'pages', 'rooms', 'messages', 'menu'):
+        data.setdefault(key, defaults.get(key, []))
+    return data
 
 def save_data(data):
-    with open(DATA_FILE, 'w') as f:
-        json.dump(data, f, indent=2)
+    save_state(data)
 
 def get_default_data():
+    configured_admin_password = os.environ.get('ADMIN_PASSWORD')
+    if os.environ.get('FLASK_ENV') == 'production' and not configured_admin_password:
+        raise RuntimeError('ADMIN_PASSWORD must be set before the first production seed')
     return {
         "settings": {
             "hotel_name": "Hotel 77",
@@ -43,6 +50,12 @@ def get_default_data():
             "seo_title": "Hotel 77 | Lamahi Premier Hotel",
             "seo_description": "Enjoy comfortable stays at Hotel 77 in Lamahi, Dang, Nepal.",
             "footer_content": "© 2026 Hotel 77. Shreegaun, Jakhera, Lamahi, Dang, Nepal.",
+            "amenities": [
+                {"icon": "clock", "title": "24/7 Room Service", "desc": "Round-the-clock room service for your comfort."},
+                {"icon": "wifi", "title": "Good WiFi", "desc": "High-speed wireless internet throughout the property."},
+                {"icon": "home", "title": "Peaceful Environment", "desc": "Tranquil atmosphere for a relaxing stay."},
+                {"icon": "utensils", "title": "Good Food", "desc": "Quality meals and dining options available."}
+            ],
             "maintenance_mode": False
         },
         "rooms": [
@@ -85,7 +98,7 @@ def get_default_data():
         "pages": [
             {"id": "about", "slug": "about", "title": "The Story of Hotel 77", "content": "### Comfort & Hospitality in Shreegaun, Jakhera, Lamahi\n\nLocated in the peaceful surroundings of Shreegaun, Jakhera, Lamahi, Dang, Nepal, **Hotel 77** offers a comfortable and welcoming stay for travelers, families, and business guests.\n\n### Our Philosophy\nWe believe great hospitality begins with genuine care. We provide clean, comfortable accommodations and friendly service.\n\n### Why Choose Hotel 77?\n* Comfortable Standard, Deluxe, and Family Suite rooms\n* Free High-Speed Wi-Fi\n* Daily housekeeping\n* Peaceful environment\n* Ample parking\n* Excellent value for money", "last_updated": "2026-07-18"}
         ],
-        "admin_password": generate_password_hash("admin77")
+        "admin_password": generate_password_hash(configured_admin_password or 'admin77')
     }
 
 # ==================== AUTH ====================
@@ -168,7 +181,7 @@ def admin_login():
     if request.method == 'POST':
         password = request.form.get('password', '')
         data = get_data()
-        if check_password_hash(data['admin_password'], password):
+        if check_password_hash(data.get('admin_password', ''), password):
             session['logged_in'] = True
             return redirect(url_for('admin_dashboard'))
         return render_template('admin_login.html', error='Invalid password')
@@ -183,7 +196,59 @@ def admin_logout():
 @login_required
 def admin_dashboard():
     data = get_data()
-    return render_template('admin.html', data=data)
+    return render_template('admin_dashboard.html', data=data)
+
+@app.route('/admin/settings')
+@login_required
+def admin_settings():
+    return render_template('admin_settings.html', data=get_data())
+
+@app.route('/admin/pages')
+@login_required
+def admin_pages():
+    return render_template('admin_pages.html', data=get_data())
+
+@app.route('/admin/pages/edit/<page_id>')
+@login_required
+def admin_edit_page(page_id):
+    data = get_data(); page = next((p for p in data['pages'] if p['id'] == page_id), None)
+    return render_template('admin_page_edit.html', data=data, page=page) if page else redirect(url_for('admin_pages'))
+
+@app.route('/admin/rooms')
+@login_required
+def admin_rooms():
+    return render_template('admin_rooms.html', data=get_data())
+
+@app.route('/admin/rooms/edit/<room_id>')
+@login_required
+def admin_edit_room(room_id):
+    data = get_data()
+    room = next((item for item in data['rooms'] if item['id'] == room_id), None)
+    if not room:
+        return redirect(url_for('admin_rooms'))
+    return render_template('admin_room_edit.html', data=data, room=room)
+
+@app.route('/admin/gallery')
+@login_required
+def admin_gallery():
+    return render_template('admin_gallery.html', data=get_data())
+
+@app.route('/admin/gallery/edit/<image_id>')
+@login_required
+def admin_edit_gallery(image_id):
+    data = get_data(); image = next((item for item in data['gallery'] if item['id'] == image_id), None)
+    return render_template('admin_gallery_edit.html', data=data, item=image) if image else redirect(url_for('admin_gallery'))
+
+@app.route('/admin/testimonials')
+@login_required
+def admin_testimonials():
+    return render_template('admin_testimonials.html', data=get_data())
+
+@app.route('/admin/testimonials/edit/<testimonial_id>')
+@login_required
+def admin_edit_testimonial(testimonial_id):
+    data = get_data(); item = next((x for x in data['testimonials'] if x['id'] == testimonial_id), None)
+    return render_template('admin_testimonial_edit.html', data=data, item=item) if item else redirect(url_for('admin_testimonials'))
 
 @app.route('/admin/update-settings', methods=['POST'])
 @login_required
@@ -191,13 +256,108 @@ def admin_update_settings():
     data = get_data()
     for key in request.form:
         if key in data['settings']:
-            data['settings'][key] = request.form[key]
+            if key == 'amenities':
+                try:
+                    parsed = json.loads(request.form[key])
+                    if isinstance(parsed, list):
+                        data['settings'][key] = parsed
+                except json.JSONDecodeError:
+                    pass
+            else:
+                data['settings'][key] = request.form[key]
     if request.form.get('maintenance_mode'):
         data['settings']['maintenance_mode'] = True
     else:
         data['settings']['maintenance_mode'] = False
     save_data(data)
-    return redirect(url_for('admin_dashboard'))
+    return redirect(url_for('admin_settings'))
+
+@app.route('/admin/pages/update/<page_id>', methods=['POST'])
+@login_required
+def admin_update_page(page_id):
+    data = get_data()
+    page = next((p for p in data['pages'] if p['id'] == page_id), None)
+    if page:
+        page['title'] = request.form.get('title', '').strip()
+        page['slug'] = request.form.get('slug', '').strip().lower().replace(' ', '-')
+        page['content'] = request.form.get('content', '')
+        page['last_updated'] = datetime.now().date().isoformat()
+        save_data(data)
+    return redirect(url_for('admin_pages'))
+
+@app.route('/admin/gallery/update/<image_id>', methods=['POST'])
+@login_required
+def admin_update_gallery(image_id):
+    data = get_data()
+    image = next((item for item in data['gallery'] if item['id'] == image_id), None)
+    if image:
+        image_url = request.form.get('image_url', '').strip()
+        if image_url:
+            image['url'] = image_url
+        image['caption'] = request.form.get('caption', '')
+        image['title'] = request.form.get('title', image.get('title', image.get('caption', '')))
+        image['alt_text'] = request.form.get('alt_text', image.get('alt_text', image.get('caption', 'Hotel 77')))
+        image['category'] = request.form.get('category', 'Other')
+        image['featured'] = request.form.get('featured') == 'on'
+        save_data(data)
+    return redirect(url_for('admin_gallery'))
+
+@app.route('/admin/gallery/delete/<image_id>', methods=['POST'])
+@login_required
+def admin_delete_gallery(image_id):
+    data = get_data()
+    data['gallery'] = [item for item in data['gallery'] if item['id'] != image_id]
+    save_data(data)
+    return redirect(url_for('admin_gallery'))
+
+@app.route('/admin/testimonials/update/<testimonial_id>', methods=['POST'])
+@login_required
+def admin_update_testimonial(testimonial_id):
+    data = get_data()
+    testimonial = next((item for item in data['testimonials'] if item['id'] == testimonial_id), None)
+    if testimonial:
+        testimonial['author_name'] = request.form.get('author_name', '')
+        testimonial['content'] = request.form.get('content', '')
+        testimonial['source'] = request.form.get('source', '')
+        try:
+            testimonial['rating'] = max(1, min(5, int(request.form.get('rating', 5))))
+        except ValueError:
+            testimonial['rating'] = 5
+        testimonial['featured'] = request.form.get('featured') == 'on'
+        save_data(data)
+    return redirect(url_for('admin_testimonials'))
+
+@app.route('/admin/testimonials/delete/<testimonial_id>', methods=['POST'])
+@login_required
+def admin_delete_testimonial(testimonial_id):
+    data = get_data()
+    data['testimonials'] = [item for item in data['testimonials'] if item['id'] != testimonial_id]
+    save_data(data)
+    return redirect(url_for('admin_testimonials'))
+
+@app.route('/admin/rooms/update/<room_id>', methods=['POST'])
+@login_required
+def admin_update_room(room_id):
+    data = get_data()
+    room = next((item for item in data['rooms'] if item['id'] == room_id), None)
+    if room:
+        room['name'] = request.form.get('name', room['name'])
+        room['category'] = request.form.get('category', room['category'])
+        room['short_description'] = request.form.get('short_description', '')
+        room['full_description'] = request.form.get('full_description', '')
+        try:
+            room['capacity_guests'] = max(1, int(request.form.get('capacity_guests', 2)))
+            room['capacity_beds'] = max(1, int(request.form.get('capacity_beds', 1)))
+        except ValueError:
+            room['capacity_guests'], room['capacity_beds'] = 2, 1
+        room['amenities'] = [a.strip() for a in request.form.get('amenities', '').split(',') if a.strip()]
+        image_url = request.form.get('image_url', '').strip()
+        if image_url:
+            room['images'] = [image_url]
+        room['featured'] = request.form.get('featured') == 'on'
+        room['enabled'] = request.form.get('enabled') == 'on'
+        save_data(data)
+    return redirect(url_for('admin_rooms'))
 
 @app.route('/admin/upload', methods=['POST'])
 @login_required
@@ -212,7 +372,18 @@ def admin_upload():
         return jsonify({'error': 'Invalid file type'}), 400
     filename = 'upload-' + str(uuid.uuid4()) + '.' + ext
     file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-    return jsonify({'success': True, 'url': '/static/uploads/' + filename})
+    original_name = secure_filename(file.filename).lower()
+    room_numbers = {'101', '102', '103', '104', '105', '107', '110'}
+    suggested_room = next((number for number in room_numbers if number in original_name), None)
+    suggested_category = 'Rooms' if suggested_room else ('Interior' if 'interior' in original_name else 'Exterior' if 'exterior' in original_name else 'Other')
+    return jsonify({
+        'success': True,
+        'url': '/static/uploads/' + filename,
+        'review_required': True,
+        'suggested_room': suggested_room,
+        'suggested_category': suggested_category,
+        'message': 'Review the suggested association before saving it to the gallery.'
+    })
 
 @app.route('/admin/rooms/add', methods=['POST'])
 @login_required
@@ -233,7 +404,7 @@ def admin_add_room():
     }
     data['rooms'].append(room)
     save_data(data)
-    return redirect(url_for('admin_dashboard'))
+    return redirect(url_for('admin_rooms'))
 
 @app.route('/admin/rooms/delete/<room_id>', methods=['POST'])
 @login_required
@@ -241,7 +412,7 @@ def admin_delete_room(room_id):
     data = get_data()
     data['rooms'] = [r for r in data['rooms'] if r['id'] != room_id]
     save_data(data)
-    return redirect(url_for('admin_dashboard'))
+    return redirect(url_for('admin_rooms'))
 
 @app.route('/admin/messages')
 @login_required
@@ -256,12 +427,6 @@ def admin_delete_message(msg_id):
     data['messages'] = [m for m in data['messages'] if m['id'] != msg_id]
     save_data(data)
     return redirect(url_for('admin_messages'))
-
-@app.route('/admin/reset', methods=['POST'])
-@login_required
-def admin_reset():
-    save_data(get_default_data())
-    return redirect(url_for('admin_dashboard'))
 
 # ==================== ERROR HANDLER ====================
 @app.errorhandler(404)

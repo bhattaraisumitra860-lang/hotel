@@ -12,32 +12,26 @@
 {% else %}
 
 <!-- Hero -->
-<div class="relative min-h-[90vh] flex items-center justify-center overflow-hidden bg-gray-950 text-white">
+<div class="relative min-h-[78vh] sm:min-h-[86vh] flex items-center justify-center overflow-hidden bg-gray-950 text-white">
     <div class="absolute inset-0 z-0">
         <img src="{{ data.settings.hero_image_url or '/static/uploads/exterior-1.png' }}" alt="Hotel" class="w-full h-full object-cover object-center opacity-40" onerror="this.src='/static/uploads/exterior-1.png'">
         <div class="absolute inset-0 bg-gradient-to-t from-gray-950 via-gray-950/40 to-gray-900/60"></div>
     </div>
-    <div class="relative z-10 max-w-7xl mx-auto px-4 py-20 text-center flex flex-col items-center">
-        <div class="mb-6 flex items-center gap-1.5 px-4 py-1.5 bg-white/5 border border-white/10 backdrop-blur-md rounded-full text-xs font-mono text-amber-400 tracking-widest uppercase">
-            ESTABLISHED
-        </div>
-        <h1 class="font-serif text-5xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-none text-white max-w-4xl">{{ data.settings.hotel_name }}</h1>
-        <p class="mt-6 font-serif text-lg sm:text-xl md:text-2xl text-gray-300 max-w-2xl font-light italic">"{{ data.settings.tagline }}"</p>
-        <div class="w-32 h-px bg-amber-600/60 my-8"></div>
-        <div class="flex flex-col sm:flex-row items-center gap-4 w-full justify-center max-w-md">
-            <a href="/rooms" class="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-white hover:bg-gray-100 text-gray-900 rounded-xl font-serif text-base tracking-wide font-medium shadow-lg hover:shadow-xl">Explore Rooms</a>
+    <div class="relative z-10 max-w-7xl mx-auto px-5 py-16 sm:py-20 text-center flex flex-col items-center">
+        <div class="mb-6 flex items-center gap-1.5 px-4 py-1.5 bg-white/5 border border-white/10 backdrop-blur-md rounded-full text-[10px] sm:text-xs font-mono text-amber-400 tracking-widest uppercase">ESTABLISHED</div>
+        <h1 class="font-serif text-4xl sm:text-6xl md:text-7xl font-bold tracking-tight leading-none text-white max-w-4xl">{{ data.settings.hotel_name }}</h1>
+        <p class="mt-5 sm:mt-6 font-serif text-base sm:text-xl md:text-2xl text-gray-300 max-w-2xl font-light italic leading-relaxed">"{{ data.settings.tagline }}"</p>
+        <div class="w-24 sm:w-32 h-px bg-amber-600/60 my-7 sm:my-8"></div>
+        <div class="flex flex-col sm:flex-row items-center gap-3 sm:gap-4 w-full justify-center max-w-md">
+            <a href="/rooms" class="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-white hover:bg-gray-100 text-gray-900 rounded-xl font-serif text-base tracking-wide font-medium shadow-lg hover:shadow-xl">Book Your Stay</a>
+            <a href="/rooms" class="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 border border-white/30 hover:bg-white/10 text-white rounded-xl font-serif text-base tracking-wide font-medium">Explore Rooms</a>
             <a href="https://wa.me/{{ data.settings.whatsapp_number|replace('+', '')|replace(' ', '') }}?text={{ data.settings.whatsapp_prefilled_text|urlencode }}" target="_blank" class="w-full sm:w-auto flex items-center justify-center gap-2 px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-mono text-xs uppercase tracking-wider font-semibold shadow-md">WhatsApp</a>
         </div>
     </div>
 </div>
 
 <!-- Amenities -->
-{% set amenities = [
-    {"icon": "clock", "title": "24/7 Room Service", "desc": "Round-the-clock room service for your comfort."},
-    {"icon": "wifi", "title": "Good WiFi", "desc": "High-speed wireless internet throughout the property."},
-    {"icon": "home", "title": "Peaceful Environment", "desc": "Tranquil atmosphere for a relaxing stay."},
-    {"icon": "utensils", "title": "Good Food", "desc": "Quality meals and dining options available."}
-] %}
+{% set amenities = data.settings.get('amenities', []) %}
 <section class="py-16 bg-white border-y border-gray-100">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center max-w-2xl mx-auto mb-12">

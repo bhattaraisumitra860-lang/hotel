@@ -2,3 +2,5 @@ flask
 flask-login
 werkzeug
 Pillow
+psycopg[binary]
+gunicorn

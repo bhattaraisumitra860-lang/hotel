@@ -5,19 +5,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{ data.settings.seo_title or 'Hotel 77' }}</title>
     <meta name="description" content="{{ data.settings.seo_description }}">
+    <meta name="theme-color" content="#0d1520">
+    <meta property="og:title" content="{{ data.settings.seo_title or 'Hotel 77' }}">
+    <meta property="og:description" content="{{ data.settings.seo_description }}">
+    <meta property="og:image" content="{{ data.settings.logo_url or '/static/uploads/logo.png' }}">
+    <link rel="icon" type="image/png" href="{{ data.settings.logo_url or '/static/uploads/logo.png' }}">
+    <link rel="apple-touch-icon" href="{{ data.settings.logo_url or '/static/uploads/logo.png' }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
-<body class="bg-white text-gray-900 font-sans">
+<body class="bg-white text-gray-900 font-sans antialiased">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:z-50 focus:top-3 focus:left-3 focus:bg-amber-500 focus:text-gray-950 focus:px-4 focus:py-2 focus:rounded-lg">Skip to content</a>
     <!-- Header -->
     <header class="sticky top-0 z-40 w-full bg-white/80 border-b border-gray-100 backdrop-blur-md">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex items-center justify-between h-20">
+            <div class="flex items-center justify-between h-16 sm:h-20">
                 <a href="/" class="flex items-center gap-2 cursor-pointer group">
-                    <img src="{{ data.settings.logo_url or '/static/uploads/logo.png' }}" alt="Logo" class="w-10 h-10 rounded-lg object-contain" onerror="this.src='/static/uploads/logo.png'">
+                    <img src="{{ data.settings.logo_url or '/static/uploads/logo.png' }}" alt="{{ data.settings.hotel_name or 'Hotel 77' }} logo" width="48" height="48" class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl object-contain shadow-sm" onerror="this.src='/static/uploads/logo.png'">
                     <div>
-                        <span class="font-serif text-xl font-bold tracking-widest text-navy-900 uppercase block">{{ data.settings.hotel_name or 'Hotel 77' }}</span>
-                        <span class="text-[9px] uppercase tracking-[0.25em] text-amber-600 block leading-tight font-mono">Luxury Boutique Hotel</span>
+                        <span class="font-serif text-lg sm:text-xl font-bold tracking-widest text-navy-900 uppercase block">{{ data.settings.hotel_name or 'Hotel 77' }}</span>
+                        <span class="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] text-amber-600 block leading-tight font-mono">Luxury Boutique Hotel</span>
                     </div>
                 </a>
                 <nav class="hidden md:flex items-center gap-8">
@@ -60,7 +69,7 @@
     </header>
 
     <!-- Main content -->
-    <main class="flex-grow">
+    <main id="main-content" class="flex-grow">
         {% block content %}{% endblock %}
     </main>
 
@@ -69,7 +78,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-12 gap-8 mb-12">
             <div class="md:col-span-5 space-y-4">
                 <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded bg-white text-gray-900 font-serif font-black flex items-center justify-center text-sm">77</div>
+                    <img src="{{ data.settings.logo_url or '/static/uploads/logo.png' }}" alt="{{ data.settings.hotel_name }} logo" width="40" height="40" class="w-10 h-10 rounded-lg object-contain bg-white p-0.5">
                     <span class="font-serif text-lg font-bold tracking-widest text-amber-500 uppercase">{{ data.settings.hotel_name }}</span>
                 </div>
                 <p class="text-gray-400 text-xs sm:text-sm font-light leading-relaxed max-w-sm">{{ data.settings.seo_description }}</p>
@@ -96,7 +105,7 @@
             <p class="text-[10px] font-mono text-gray-500 uppercase tracking-wider">{{ data.settings.footer_content }}</p>
         </div>
         <div class="mt-4 flex justify-center">
-            <a href="/admin/login" class="opacity-0 hover:opacity-100 transition-opacity duration-500 text-[10px] font-mono text-gray-500 hover:text-amber-400 uppercase tracking-widest">Admin</a>
+            <a href="/admin/login" aria-label="Open Hotel 77 admin login" title="Admin login" class="opacity-0 hover:opacity-100 transition-opacity duration-500 text-[10px] font-mono text-gray-500 hover:text-amber-400 uppercase tracking-widest">Admin</a>
         </div>
     </footer>
 

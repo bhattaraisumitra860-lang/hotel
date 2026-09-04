@@ -1,0 +1,7 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{ title or 'Admin · Hotel 77' }}</title><script src="https://cdn.tailwindcss.com"></script></head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+<div class="min-h-screen lg:flex">
+<aside class="w-full lg:w-72 bg-slate-950 text-white p-6 lg:min-h-screen"><a href="/admin" class="block mb-8"><div class="text-amber-400 text-xs tracking-[.3em] uppercase">Hotel 77</div><div class="text-2xl font-serif font-bold mt-1">Control Center</div></a>
+<nav class="grid grid-cols-2 lg:grid-cols-1 gap-2 text-sm">{% for link, label in [('/admin','Overview'),('/admin/settings','Website Settings'),('/admin/pages','Pages & About'),('/admin/rooms','Rooms'),('/admin/gallery','Images & Gallery'),('/admin/testimonials','Testimonials'),('/admin/messages','Messages')] %}<a href="{{ link }}" class="rounded-xl px-4 py-3 {% if request.path == link %}bg-amber-500 text-slate-950 font-semibold{% else %}text-slate-300 hover:bg-white/10{% endif %}">{{ label }}</a>{% endfor %}</nav><div class="border-t border-white/10 mt-8 pt-5 space-y-2 text-xs"><a href="/" class="block text-slate-400 hover:text-white">← View website</a><a href="/admin/logout" class="block text-red-300 hover:text-red-200">Sign out</a></div></aside>
+<main class="flex-1 p-5 sm:p-8 lg:p-12 max-w-7xl">{% block content %}{% endblock %}</main></div></body></html>
