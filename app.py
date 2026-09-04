@@ -6,13 +6,17 @@ import json
 import os
 import uuid
 from datetime import datetime
-from database import load_state, save_state
+from database import load_state, save_state, StorageConfigurationError
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY') or ('local-hotel77-secret' if os.environ.get('FLASK_ENV') != 'production' else None)
 if not app.secret_key:
     raise RuntimeError('SECRET_KEY must be set in production')
 app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static/uploads')
+app.config['SEND_FILE_MAX_AGE_DEFAULT'] = 60 * 60 * 24 * 30
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = bool(os.environ.get('VERCEL') or os.environ.get('FLASK_ENV') == 'production')
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
@@ -191,6 +195,28 @@ def admin_login():
 def admin_logout():
     session.pop('logged_in', None)
     return redirect(url_for('admin_login'))
+
+@app.route('/admin/change-password', methods=['GET', 'POST'])
+@login_required
+def admin_change_password():
+    error = None
+    success = None
+    if request.method == 'POST':
+        current = request.form.get('current_password', '')
+        new_password = request.form.get('new_password', '')
+        confirm = request.form.get('confirm_password', '')
+        data = get_data()
+        if not check_password_hash(data.get('admin_password', ''), current):
+            error = 'Current password is incorrect.'
+        elif len(new_password) < 10:
+            error = 'New password must be at least 10 characters.'
+        elif new_password != confirm:
+            error = 'New passwords do not match.'
+        else:
+            data['admin_password'] = generate_password_hash(new_password)
+            save_data(data)
+            success = 'Password changed successfully.'
+    return render_template('admin_change_password.html', data=get_data(), error=error, success=success)
 
 @app.route('/admin')
 @login_required
@@ -433,6 +459,18 @@ def admin_delete_message(msg_id):
 def not_found(e):
     data = get_data()
     return render_template('404.html', data=data), 404
+
+@app.errorhandler(StorageConfigurationError)
+def storage_configuration_error(error):
+    return (
+        '<!doctype html><html><head><title>Storage setup required</title>'
+        '<meta name="viewport" content="width=device-width, initial-scale=1">'
+        '<style>body{font-family:system-ui;max-width:680px;margin:12vh auto;padding:24px;color:#172033}code{background:#f1f5f9;padding:3px 6px;border-radius:5px}a{color:#a16207}</style></head>'
+        '<body><h1>Admin storage setup required</h1>'
+        '<p>This Vercel deployment has no persistent database configured, so the change was not saved.</p>'
+        '<p>Add <code>DATABASE_URL</code> or <code>POSTGRES_URL</code> in Vercel Project Settings → Environment Variables, then redeploy.</p>'
+        '<p><a href="/admin">Return to admin</a></p></body></html>', 503
+    )
 
 # ==================== RUN ====================
 if __name__ == '__main__':

@@ -16,15 +16,20 @@ except ImportError:  # pragma: no cover - local fallback when dependency is abse
 DATA_FILE = Path(__file__).resolve().parent / "data.json"
 
 
+class StorageConfigurationError(RuntimeError):
+    """Raised when a production deployment has no writable persistent store."""
+
+
 def _database_url():
-    return os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL")
+    return os.environ.get("DATABASE_URL") or os.environ.get("SUPABASE_DB_URL") or os.environ.get("POSTGRES_URL")
 
 
 def _connect():
     url = _database_url()
     if not url or psycopg is None:
         return None
-    return psycopg.connect(url, connect_timeout=5)
+    # Supabase transaction pooling does not support prepared statements.
+    return psycopg.connect(url, connect_timeout=5, prepare_threshold=None)
 
 
 def load_state(default_factory):
@@ -62,6 +67,10 @@ def save_state(state):
     """Persist state without resetting or replacing unrelated records."""
     connection = _connect()
     if connection is None:
+        if os.environ.get('VERCEL') or os.environ.get('VERCEL_ENV'):
+            raise StorageConfigurationError(
+                'Admin changes need a DATABASE_URL or POSTGRES_URL environment variable on Vercel.'
+            )
         DATA_FILE.write_text(json.dumps(state, indent=2), encoding="utf-8")
         return
     with connection:

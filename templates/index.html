@@ -68,7 +68,7 @@
             {% for room in featured[:3] %}
             <div class="group flex flex-col bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-xl transition-all">
                 <div class="relative h-64 overflow-hidden bg-gray-900">
-                    <img src="{{ room.images[0] or '/static/uploads/logo.png' }}" alt="{{ room.name }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" onerror="this.src='/static/uploads/logo.png'">
+                    <img src="{{ room.images[0] or '/static/uploads/logo.png' }}" alt="{{ room.name }}" loading="lazy" decoding="async" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" onerror="this.src='/static/uploads/logo.png'">
                     <div class="absolute top-4 left-4 px-3 py-1 bg-white/95 border border-gray-100 text-[10px] font-mono tracking-widest text-gray-800 uppercase rounded-full">{{ room.category }}</div>
                 </div>
                 <div class="p-6 flex-1 flex flex-col">
