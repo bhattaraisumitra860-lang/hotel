@@ -3,6 +3,7 @@
 
 body { font-family: 'Inter', sans-serif; }
 html { scroll-behavior: smooth; }
+@view-transition { navigation: auto; }
 ::selection { background: #f59e0b; color: #0d1520; }
 img { max-width: 100%; }
 body { overflow-x: hidden; }
