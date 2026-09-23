@@ -40,8 +40,29 @@ def get_data():
     defaults = get_default_data()
     for key, value in defaults.get('settings', {}).items():
         data.setdefault('settings', {}).setdefault(key, value)
-    for key in ('gallery', 'testimonials', 'pages', 'rooms', 'messages', 'menu'):
+    if data.get('settings', {}).get('whatsapp_prefilled_text') == 'Hello, I am interested in booking a stay at Hotel 77.':
+        data['settings']['whatsapp_prefilled_text'] = 'नमस्कार\nमलाई Hotel 77 को कोठा बुकिङ तथा खाना/रेस्टुरेन्ट सम्बन्धी जानकारी चाहिएको छ।\nकृपया उपलब्ध कोठा, मूल्य, खाना/मेनु तथा अन्य आवश्यक जानकारी उपलब्ध गराइदिनुहोला।\nधन्यवाद!'
+    for key in ('gallery', 'testimonials', 'pages', 'rooms', 'messages', 'menu', 'dishes', 'menu_categories'):
         data.setdefault(key, defaults.get(key, []))
+    normalized_categories = []
+    for category in data['menu_categories']:
+        if isinstance(category, str):
+            normalized_categories.append({'name': category, 'image': ''})
+        elif isinstance(category, dict) and category.get('name'):
+            normalized_categories.append({'name': category['name'], 'image': category.get('image', '')})
+    data['menu_categories'] = normalized_categories
+    known_category_names = {category['name'] for category in data['menu_categories']}
+    for dish in data['dishes']:
+        category = dish.get('category', '').strip()
+        dish.setdefault('dietary_type', '')
+        if category and category not in known_category_names:
+            data['menu_categories'].append({'name': category, 'image': ''})
+            known_category_names.add(category)
+    if not any(item.get('path') == '/menu' for item in data['menu']):
+        data['menu'].append({'id': 'mn-menu', 'label': 'Menu', 'path': '/menu', 'order': 4})
+        for item in data['menu']:
+            if item.get('path') in {'/page/about', '/contact'}:
+                item['order'] = item.get('order', 0) + 1
     for image in data['gallery']:
         image.setdefault('visible', True)
         image.setdefault('featured', False)
@@ -63,7 +84,7 @@ def get_default_data():
             "primary_phone": "9847871687",
             "secondary_phone": "9857841687",
             "whatsapp_number": "9847871687",
-            "whatsapp_prefilled_text": "Hello, I am interested in booking a stay at Hotel 77.",
+            "whatsapp_prefilled_text": "नमस्कार\nमलाई Hotel 77 को कोठा बुकिङ तथा खाना/रेस्टुरेन्ट सम्बन्धी जानकारी चाहिएको छ।\nकृपया उपलब्ध कोठा, मूल्य, खाना/मेनु तथा अन्य आवश्यक जानकारी उपलब्ध गराइदिनुहोला।\nधन्यवाद!",
             "email_address": "hotel77@gmail.com",
             "address": "Shreegaun, Jakhera, Lamahi, Dang, Nepal",
             "google_maps_embed_url": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3527.2722631552697!2d82.5657133753295!3d27.862905676093725!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3997a36fb3930c71%3A0x49ac19d8da197d81!2sHotel%2077!5e0!3m2!1sen!2snp!4v1781294849874!5m2!1sen!2snp",
@@ -110,6 +131,8 @@ def get_default_data():
             {"id": "t2", "author_name": "Rajesh Hamal", "rating": 5, "content": "Excellent service and very comfortable rooms. Perfect location for travelers.", "source": "Direct Guest", "featured": True},
             {"id": "t3", "author_name": "Anita Gurung", "rating": 4, "content": "Very clean and well-maintained. Great value for money.", "source": "Booking.com", "featured": True}
         ],
+        "dishes": [],
+        "menu_categories": [],
         "messages": [],
         "menu": [
             {"id": "mn1", "label": "Home", "path": "/", "order": 1},
@@ -168,6 +191,17 @@ def rooms_page():
     data = get_data()
     return render_template('rooms.html', data=data)
 
+@app.route('/menu')
+def menu_page():
+    data = get_data()
+    dishes = [dish for dish in data['dishes'] if dish.get('visible', True)]
+    categories = []
+    for dish in dishes:
+        if dish.get('category') not in categories:
+            categories.append(dish.get('category'))
+    category_details = [item for item in data['menu_categories'] if item['name'] in categories]
+    return render_template('menu.html', data=data, dishes=dishes, categories=categories, category_details=category_details)
+
 @app.route('/gallery')
 def gallery_page():
     data = get_data()
@@ -188,7 +222,7 @@ def robots_txt():
 @app.route('/sitemap.xml')
 def sitemap_xml():
     data = get_data()
-    urls = ['/', '/rooms', '/gallery', '/contact']
+    urls = ['/', '/rooms', '/menu', '/gallery', '/contact']
     urls.extend('/page/' + page['slug'] for page in data['pages'])
     body = '\n'.join(f'  <url><loc>https://www.hotel77.com.np{url}</loc></url>' for url in urls)
     return (f'<?xml version="1.0" encoding="UTF-8"?>\n'
@@ -210,6 +244,7 @@ def api_public_data():
     return jsonify({
         'settings': data['settings'],
         'rooms': [r for r in data['rooms'] if r['enabled']],
+        'dishes': [dish for dish in data['dishes'] if dish.get('visible', True)],
         'gallery': [item for item in data['gallery'] if item.get('visible', True)],
         'testimonials': data['testimonials'],
         'pages': data['pages'],
@@ -339,6 +374,98 @@ def admin_edit_room(room_id):
 @login_required
 def admin_gallery():
     return render_template('admin_gallery.html', data=get_data())
+
+@app.route('/admin/menu')
+@login_required
+def admin_menu():
+    data = get_data()
+    selected_category = request.args.get('category', '').strip()
+    dishes = data['dishes']
+    if selected_category:
+        dishes = [dish for dish in dishes if dish.get('category') == selected_category]
+    return render_template('admin_menu.html', data=data, dishes=dishes, selected_category=selected_category)
+
+@app.route('/admin/menu/categories/add', methods=['POST'])
+@login_required
+def admin_add_menu_category():
+    data = get_data()
+    category = request.form.get('category', '').strip()
+    image = request.form.get('image', '').strip()
+    if category and not any(item['name'].lower() == category.lower() for item in data['menu_categories']):
+        data['menu_categories'].append({'name': category, 'image': image})
+        save_data(data)
+    return redirect(url_for('admin_menu', category=category))
+
+@app.route('/admin/menu/categories/edit/<path:category_name>', methods=['GET', 'POST'])
+@login_required
+def admin_edit_menu_category(category_name):
+    data = get_data()
+    category = next((item for item in data['menu_categories'] if item['name'] == category_name), None)
+    if not category:
+        return redirect(url_for('admin_menu'))
+    if request.method == 'POST':
+        new_name = request.form.get('name', '').strip()
+        image = request.form.get('image', '').strip()
+        name_in_use = any(item['name'].lower() == new_name.lower() and item is not category for item in data['menu_categories'])
+        if new_name and not name_in_use:
+            old_name = category['name']
+            category['name'] = new_name
+            category['image'] = image
+            for dish in data['dishes']:
+                if dish.get('category') == old_name:
+                    dish['category'] = new_name
+            save_data(data)
+            return redirect(url_for('admin_menu', category=new_name))
+    return render_template('admin_category_edit.html', data=data, category=category)
+
+@app.route('/admin/menu/add', methods=['GET', 'POST'])
+@login_required
+def admin_add_dish():
+    if request.method == 'POST':
+        data = get_data()
+        data['dishes'].append({
+            'id': 'dish-' + str(uuid.uuid4())[:8],
+            'name': request.form.get('name', '').strip(),
+            'category': request.form.get('category', 'Main Course').strip(),
+            'description': request.form.get('description', '').strip(),
+            'price': request.form.get('price', '').strip(),
+            'image': request.form.get('image', '').strip(),
+            'dietary_type': request.form.get('dietary_type', '').strip(),
+            'visible': request.form.get('visible') == 'on',
+            'featured': request.form.get('featured') == 'on'
+        })
+        save_data(data)
+        return redirect(url_for('admin_menu', category=request.form.get('category', '').strip()))
+    data = get_data()
+    return render_template('admin_dish_edit.html', data=data, dish=None, selected_category=request.args.get('category', '').strip())
+
+@app.route('/admin/menu/edit/<dish_id>')
+@login_required
+def admin_edit_dish(dish_id):
+    data = get_data()
+    dish = next((item for item in data['dishes'] if item['id'] == dish_id), None)
+    return render_template('admin_dish_edit.html', data=data, dish=dish, selected_category='') if dish else redirect(url_for('admin_menu'))
+
+@app.route('/admin/menu/update/<dish_id>', methods=['POST'])
+@login_required
+def admin_update_dish(dish_id):
+    data = get_data()
+    dish = next((item for item in data['dishes'] if item['id'] == dish_id), None)
+    if dish:
+        for key in ('name', 'category', 'description', 'price', 'image', 'dietary_type'):
+            dish[key] = request.form.get(key, '').strip()
+        dish['visible'] = request.form.get('visible') == 'on'
+        dish['featured'] = request.form.get('featured') == 'on'
+        save_data(data)
+    return redirect(url_for('admin_menu', category=request.form.get('category', '').strip()))
+
+@app.route('/admin/menu/delete/<dish_id>', methods=['POST'])
+@login_required
+def admin_delete_dish(dish_id):
+    data = get_data()
+    data['dishes'] = [dish for dish in data['dishes'] if dish['id'] != dish_id]
+    save_data(data)
+    return redirect(url_for('admin_menu'))
 
 @app.route('/admin/gallery/edit/<image_id>')
 @login_required

@@ -42,7 +42,7 @@
                     {% endif %}
                     <div class="mt-6 pt-1 flex items-center justify-between gap-4">
                         <button onclick="openRoomModal('{{ room.id }}')" class="text-xs font-mono uppercase tracking-wider text-gray-900 hover:text-amber-700 underline">View Details</button>
-                        <a href="https://wa.me/{{ data.settings.whatsapp_number|replace('+', '')|replace(' ', '') }}" target="_blank" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-mono uppercase tracking-wider shadow-sm">WhatsApp</a>
+                        <a href="https://wa.me/{{ data.settings.whatsapp_number|replace('+', '')|replace(' ', '') }}?text={{ data.settings.whatsapp_prefilled_text|urlencode }}" target="_blank" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-mono uppercase tracking-wider shadow-sm">WhatsApp</a>
                     </div>
                 </div>
             </div>
@@ -108,7 +108,7 @@
                 <span class="text-[10px] font-mono uppercase text-amber-800 tracking-wider block mb-2 font-semibold">Book This Room</span>
                 <p class="text-xs text-gray-600 font-light mb-4">Contact us directly via phone or WhatsApp to check availability.</p>
                 <div class="grid grid-cols-2 gap-3">
-                    <a href="https://wa.me/{{ data.settings.whatsapp_number|replace('+', '')|replace(' ', '') }}" target="_blank" class="flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-mono uppercase tracking-wider font-semibold shadow-sm">WhatsApp</a>
+                    <a href="https://wa.me/{{ data.settings.whatsapp_number|replace('+', '')|replace(' ', '') }}?text={{ data.settings.whatsapp_prefilled_text|urlencode }}" target="_blank" class="flex items-center justify-center gap-1.5 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-mono uppercase tracking-wider font-semibold shadow-sm">WhatsApp</a>
                     <a href="tel:{{ data.settings.primary_phone }}" class="flex items-center justify-center gap-1.5 py-3 border border-gray-900 hover:bg-gray-900 hover:text-white text-gray-900 rounded-xl text-xs font-mono uppercase tracking-wider font-semibold transition-all">Call</a>
                 </div>
             </div>

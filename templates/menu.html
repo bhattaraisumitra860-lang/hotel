@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% block content %}
+<section class="bg-gray-950 text-white py-20 sm:py-28">
+  <div class="max-w-5xl mx-auto px-4 text-center">
+    <span class="text-xs uppercase tracking-[.3em] text-amber-400 font-semibold">Hotel 77 Restaurant</span>
+    <h1 class="font-serif text-5xl sm:text-7xl font-bold mt-4">Our Menu</h1>
+    <p class="mt-5 text-gray-300 max-w-xl mx-auto">Freshly prepared food for every mood.</p>
+  </div>
+</section>
+<main class="bg-gray-50 py-12 sm:py-20">
+  <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+  {% if dishes %}
+    <div class="flex justify-center gap-3 mb-10" role="tablist">
+      <button type="button" data-view="overview" class="menu-view rounded-full bg-amber-600 text-white px-6 py-3 text-xs font-mono uppercase tracking-wider font-semibold" aria-selected="true">Overview</button>
+      <button type="button" data-view="categories" class="menu-view rounded-full bg-white text-gray-600 border border-gray-200 px-6 py-3 text-xs font-mono uppercase tracking-wider font-semibold" aria-selected="false">Categories</button>
+    </div>
+    <div id="category-browser" class="hidden">
+      <div class="text-center mb-8"><span class="text-xs uppercase tracking-[.25em] text-amber-700 font-semibold">Choose a category</span><h2 class="font-serif text-3xl sm:text-4xl font-bold text-gray-900 mt-2">What would you like to eat?</h2></div>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
+      {% for category in category_details %}
+        <button type="button" class="category-card relative overflow-hidden rounded-2xl h-44 sm:h-56 bg-gray-900 text-left group" data-category="{{ category.name|lower }}">
+          {% if category.image %}<img src="{{ category.image|optimized_image }}" alt="{{ category.name }}" class="w-full h-full object-cover opacity-75 group-hover:scale-105 transition-transform duration-500" loading="lazy">{% else %}<div class="w-full h-full bg-gradient-to-br from-amber-600 to-orange-900"></div>{% endif %}
+          <div class="absolute inset-0 bg-gradient-to-t from-gray-950/90 via-gray-950/15 to-transparent"></div><span class="absolute inset-x-4 bottom-4 font-serif text-xl sm:text-2xl font-bold text-white">{{ category.name }}</span>
+        </button>
+      {% endfor %}
+      </div>
+    </div>
+    <div id="menu-overview">
+      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-7">
+      {% for dish in dishes %}
+        <article class="menu-dish" data-category="{{ dish.category|lower }}">
+          <div class="menu-dish-photo">
+            {% if dish.image %}<img src="{{ dish.image|optimized_image }}" alt="{{ dish.name }}" loading="lazy" decoding="async" onerror="this.src='/static/uploads/logo.png'">{% else %}<div class="menu-dish-placeholder">77</div>{% endif %}
+            <div class="menu-dish-shade"></div>
+            <div class="menu-dish-badges">
+              {% if dish.featured %}<span class="menu-badge menu-badge-featured">★ Featured</span>{% endif %}
+              <span class="menu-badge menu-badge-category">{{ dish.category }}</span>
+            </div>
+            <div class="menu-dish-pleat"></div>
+          </div>
+          <div class="menu-dish-content">
+            <div class="menu-dish-title-row"><h3>{{ dish.name }}</h3>{% if dish.price %}<span class="menu-dish-price">Rs. {{ dish.price }}</span>{% endif %}</div>
+            {% if dish.description %}<p class="menu-dish-description">{{ dish.description }}</p>{% endif %}
+            {% if dish.dietary_type %}<hr class="menu-dish-divider"><div class="menu-dish-tags"><span class="menu-dish-tag {% if dish.dietary_type == 'Veg' %}is-veg{% else %}is-nonveg{% endif %}">{% if dish.dietary_type == 'Veg' %}●{% else %}◆{% endif %} {{ dish.dietary_type }}</span></div>{% endif %}
+          </div>
+        </article>
+      {% endfor %}
+      </div>
+    </div>
+    <div id="category-back" class="hidden text-center mt-8"><button type="button" class="rounded-xl border border-gray-300 bg-white px-5 py-3 text-sm font-semibold text-gray-700">← All categories</button></div>
+  {% else %}
+    <div class="max-w-xl mx-auto text-center bg-white border border-gray-200 rounded-3xl p-10"><h2 class="font-serif text-3xl font-bold text-gray-900">Menu coming soon</h2><p class="mt-3 text-gray-600">Please contact Hotel 77 for today’s dishes and prices.</p><a href="/contact" class="inline-flex mt-6 rounded-xl bg-amber-600 text-white px-5 py-3 text-sm font-semibold">Contact us</a></div>
+  {% endif %}
+  </div>
+</main>
+<script>
+(() => {
+  const views = document.querySelectorAll('.menu-view');
+  const overview = document.getElementById('menu-overview');
+  const browser = document.getElementById('category-browser');
+  const back = document.getElementById('category-back');
+  const dishes = document.querySelectorAll('.menu-dish');
+  function setView(view) {
+    const categories = view === 'categories'; browser.classList.toggle('hidden', !categories); overview.classList.toggle('hidden', categories); back.classList.add('hidden'); dishes.forEach(d => d.classList.remove('hidden'));
+    views.forEach(v => { const active = v.dataset.view === view; v.setAttribute('aria-selected', active); v.classList.toggle('bg-amber-600', active); v.classList.toggle('text-white', active); v.classList.toggle('bg-white', !active); v.classList.toggle('text-gray-600', !active); });
+  }
+  views.forEach(v => v.addEventListener('click', () => setView(v.dataset.view)));
+  document.querySelectorAll('.category-card').forEach(card => card.addEventListener('click', () => { browser.classList.add('hidden'); overview.classList.remove('hidden'); back.classList.remove('hidden'); dishes.forEach(d => d.classList.toggle('hidden', d.dataset.category !== card.dataset.category)); }));
+  back && back.querySelector('button').addEventListener('click', () => setView('categories'));
+})();
+</script>
+{% endblock %}

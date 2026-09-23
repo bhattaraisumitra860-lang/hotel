@@ -32,7 +32,7 @@
                         </div>
                         <div>
                             <span class="text-[10px] font-mono uppercase text-gray-400 tracking-wider">WhatsApp</span>
-                            <p class="text-base text-blue-600 hover:text-blue-700 transition-colors font-mono mt-1"><a href="https://wa.me/{{ data.settings.whatsapp_number|replace('+', '')|replace(' ', '') }}" target="_blank">Send Message</a></p>
+                            <p class="text-base text-blue-600 hover:text-blue-700 transition-colors font-mono mt-1"><a href="https://wa.me/{{ data.settings.whatsapp_number|replace('+', '')|replace(' ', '') }}?text={{ data.settings.whatsapp_prefilled_text|urlencode }}" target="_blank">Send Message</a></p>
                         </div>
                     </div>
 

@@ -80,7 +80,7 @@
                     </div>
                     <div class="mt-6 flex items-center justify-between gap-4">
                         <a href="/rooms" class="text-xs font-mono uppercase tracking-wider text-gray-900 hover:text-amber-700 underline">View Details</a>
-                        <a href="https://wa.me/{{ data.settings.whatsapp_number|replace('+', '')|replace(' ', '') }}" target="_blank" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-mono uppercase tracking-wider shadow-sm">WhatsApp Booking</a>
+                        <a href="https://wa.me/{{ data.settings.whatsapp_number|replace('+', '')|replace(' ', '') }}?text={{ data.settings.whatsapp_prefilled_text|urlencode }}" target="_blank" class="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-mono uppercase tracking-wider shadow-sm">WhatsApp Booking</a>
                     </div>
                 </div>
             </div>
