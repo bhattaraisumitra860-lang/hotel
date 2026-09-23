@@ -23,6 +23,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% if request.path == '/' %}<link rel="preload" as="image" href="{{ (data.settings.hero_image_url or '/static/uploads/exterior-1.png')|optimized_image }}">{% endif %}
     <script type="application/ld+json">{{ {'@context':'https://schema.org','@type':'Hotel','name':data.settings.hotel_name or 'Hotel 77','description':data.settings.seo_description or 'Hotel in Lamahi, Dang, Nepal','url':'https://www.hotel77.com.np' ~ request.path,'telephone':data.settings.primary_phone,'image':'https://www.hotel77.com.np' ~ (data.settings.logo_url or '/static/uploads/logo.png'),'address':{'@type':'PostalAddress','streetAddress':data.settings.address,'addressLocality':'Lamahi','addressRegion':'Dang','addressCountry':'NP'},'priceRange':'$$'}|tojson }}</script>
 </head>
 <body class="bg-white text-gray-900 font-sans antialiased">
@@ -32,10 +33,10 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 sm:h-20">
                 <a href="/" class="flex items-center gap-2 cursor-pointer group">
-                    <img src="{{ data.settings.logo_url or '/static/uploads/logo.png' }}" alt="{{ data.settings.hotel_name or 'Hotel 77' }} logo" width="48" height="48" class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl object-contain shadow-sm" onerror="this.src='/static/uploads/logo.png'">
+                    <img src="{{ (data.settings.logo_url or '/static/uploads/logo.png')|optimized_image }}" alt="{{ data.settings.hotel_name or 'Hotel 77' }} logo" width="48" height="48" class="w-10 h-10 sm:w-12 sm:h-12 rounded-xl object-contain shadow-sm" onerror="this.src='/static/uploads/logo.png'">
                     <div>
                         <span class="font-serif text-lg sm:text-xl font-bold tracking-widest text-navy-900 uppercase block">{{ data.settings.hotel_name or 'Hotel 77' }}</span>
-                        <span class="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] text-amber-600 block leading-tight font-mono">Luxury Boutique Hotel</span>
+                        <span class="text-[8px] sm:text-[9px] uppercase tracking-[0.2em] text-amber-600 block leading-tight font-mono">Best in Town</span>
                     </div>
                 </a>
                 <nav class="hidden md:flex items-center gap-8">
@@ -93,7 +94,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-12 gap-8 mb-12">
             <div class="md:col-span-5 space-y-4">
                 <div class="flex items-center gap-2">
-                    <img src="{{ data.settings.logo_url or '/static/uploads/logo.png' }}" alt="{{ data.settings.hotel_name }} logo" width="40" height="40" class="w-10 h-10 rounded-lg object-contain bg-white p-0.5">
+                    <img src="{{ (data.settings.logo_url or '/static/uploads/logo.png')|optimized_image }}" alt="{{ data.settings.hotel_name }} logo" width="40" height="40" class="w-10 h-10 rounded-lg object-contain bg-white p-0.5">
                     <span class="font-serif text-lg font-bold tracking-widest text-amber-500 uppercase">{{ data.settings.hotel_name }}</span>
                 </div>
                 <p class="text-gray-400 text-xs sm:text-sm font-light leading-relaxed max-w-sm">{{ data.settings.seo_description }}</p>

@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for, s
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 from functools import wraps
+from PIL import Image
 import json
 import os
 import uuid
@@ -19,6 +20,18 @@ app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['SESSION_COOKIE_SECURE'] = bool(os.environ.get('VERCEL') or os.environ.get('FLASK_ENV') == 'production')
 app.config['MAX_CONTENT_LENGTH'] = 10 * 1024 * 1024
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
+@app.template_filter('optimized_image')
+def optimized_image(url):
+    """Prefer the generated WebP copy while retaining the original fallback."""
+    if not url or not isinstance(url, str):
+        return url
+    path = url.split('?', 1)[0]
+    if path.startswith('/static/uploads/') and path.lower().endswith(('.png', '.jpg', '.jpeg')):
+        webp_path = path.rsplit('.', 1)[0] + '.webp'
+        if os.path.exists(os.path.join(app.config['UPLOAD_FOLDER'], os.path.basename(webp_path))):
+            return webp_path
+    return url
 
 # ==================== DATA LAYER ====================
 def get_data():
@@ -487,14 +500,24 @@ def admin_upload():
     if ext not in ALLOWED_EXTENSIONS:
         return jsonify({'error': 'Invalid file type'}), 400
     filename = 'upload-' + str(uuid.uuid4()) + '.' + ext
-    file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+    source_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+    file.save(source_path)
+    output_url = '/static/uploads/' + filename
+    if ext in {'png', 'jpg', 'jpeg'}:
+        webp_filename = os.path.splitext(filename)[0] + '.webp'
+        try:
+            with Image.open(source_path) as uploaded:
+                uploaded.convert('RGB').save(os.path.join(app.config['UPLOAD_FOLDER'], webp_filename), 'WEBP', quality=82, method=6)
+            output_url = '/static/uploads/' + webp_filename
+        except Exception:
+            pass
     original_name = secure_filename(file.filename).lower()
     room_numbers = {'101', '102', '103', '104', '105', '107', '110'}
     suggested_room = next((number for number in room_numbers if number in original_name), None)
     suggested_category = 'Rooms' if suggested_room else ('Interior' if 'interior' in original_name else 'Exterior' if 'exterior' in original_name else 'Other')
     return jsonify({
         'success': True,
-        'url': '/static/uploads/' + filename,
+        'url': output_url,
         'review_required': True,
         'suggested_room': suggested_room,
         'suggested_category': suggested_category,

@@ -20,7 +20,7 @@
         <div class="columns-1 sm:columns-2 lg:columns-3 gap-6 space-y-6" id="gallery-grid">
             {% for item in data.gallery %}
             <div class="gallery-item break-inside-avoid relative overflow-hidden rounded-2xl group border border-gray-100 bg-gray-50 shadow-sm hover:shadow-lg transition-all cursor-pointer" data-category="{{ item.category }}" onclick="openLightbox('{{ item.id }}')">
-                <img src="{{ item.url }}" alt="{{ item.caption }}" class="w-full object-cover rounded-2xl transition-transform duration-700 group-hover:scale-105" onerror="this.src='/static/uploads/logo.png'" loading="lazy">
+                <img src="{{ item.url|optimized_image }}" alt="{{ item.caption }}" class="w-full object-cover rounded-2xl transition-transform duration-700 group-hover:scale-105" onerror="this.src='/static/uploads/logo.png'" loading="lazy" decoding="async">
                 <div class="absolute inset-0 bg-gradient-to-t from-gray-950/85 via-gray-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-5">
                     <div class="flex items-center justify-between gap-3 text-white">
                         <div>
